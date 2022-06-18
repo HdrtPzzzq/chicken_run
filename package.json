@@ -1,6 +1,13 @@
 {
-  "name": "chiken_run",
+  "name": "chicken_run",
   "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "loic.segundo",
   "dependencies": {
+    "express": "^4.18.1",
   }
 }
