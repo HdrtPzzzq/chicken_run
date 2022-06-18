@@ -1,78 +1,126 @@
 "use strict";
-import express from "express"
+import express from "express";
+import mysql2 from "mysql2";
 
 export function chickenRunServer(port, host) {
     const server = express();
     server.use(express.json());
     server.use(express.text());
 
-    let farmyard = [];
+    const database = mysql2.createConnection({
+        host: "localhost",
+        port: 3306,
+        user: "root",
+        password: "password123",
+        database: "chicken_run",
+    });
+
+    database.connect();
+
+    // Drop potential table
+    database.query('DROP TABLE chicken;');
+
+    // Create table in DB
+    database.query(
+        `CREATE TABLE chicken
+                (name varchar(255) NOT NULL,
+                 birthday TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                 weight real NOT NULL,
+                 steps int DEFAULT 0,
+                 isRunning boolean DEFAULT false
+                );`,
+        function(error, results, field) {
+            if (error) {
+                throw error;
+            }
+    });
 
     // List of endpoints
 
-    // Reply with farmyard list of chicken
+    // Reply with farmyard list of chickens
     server.get('/chicken', async(request, reply) => {
         reply.writeHead(200, {'Content-type': 'application/json'});
-        reply.end(JSON.stringify(farmyard));
+        database.query('SELECT * FROM chicken;',
+            function(error, results) {
+                if (error) {
+                    throw error;
+                }
+                reply.end(JSON.stringify(results));
+            });
     });
 
     // Add a chicken to the farmyard
     server.post('/chicken', async(request, reply) => {
         const requestBody = parseRequest(request.body);
+        let queryResult;
 
         // Mandatory fields not correct
         if (typeof requestBody === "string") {
             reply.writeHead(422, {'Content-type': 'text/plain'});
-            reply.end(requestBody);
+            reply.end();
         } else {
-            farmyard.push(requestBody);
-
-            reply.writeHead(200, {'Content-type': 'application/json'});
-            reply.end(JSON.stringify(farmyard));
+            database.query('INSERT INTO chicken (name, weight) VALUES (' +
+                database.escape(requestBody.name) + ', ' +
+                database.escape(requestBody.weight) + ');',
+                function(error, results) {
+                    if (error) {
+                        throw error;
+                    }
+                    queryResult = results;
+                    reply.writeHead(200, {'Content-type': 'application/json'});
+                    reply.end();
+                }
+            );
         }
     });
 
     // Replace a chicken in the farmyard
     server.put('/chicken', async(request, reply) => {
         const requestBody = request.body;
+        if (requestBody.steps === undefined) {
+            requestBody.steps = 0;
+        }
 
         // Mandatory fields not correct
         if (typeof requestBody.name !== "string" || typeof requestBody.weight !== "number") {
             reply.writeHead(422);
+            reply.end();
         } else {
-            farmyard = farmyard.map(chickenElement => {
-                if (chickenElement.name === requestBody.name)
-                {
-                    return {
-                        name: requestBody.name,
-                        birthday: requestBody.birthday,
-                        weight: requestBody.weight,
-                        steps: requestBody.steps,
-                        isRunning: requestBody.isRunning,
-                    };
+            database.query('UPDATE chicken ' +
+               'SET birthday = ' + database.escape(requestBody.birthday) + ',' +
+                   'weight = ' + database.escape(requestBody.weight) + ', '+
+                   'steps = ' + database.escape(requestBody.steps) + ', ' +
+                   'isRunning = ' + database.escape(requestBody.isRunning) + ' '+
+               'WHERE name = ' + database.escape(requestBody.name) + ';',
+                function(error) {
+                    if (error) {
+                        throw error;
+                    }
+                    reply.writeHead(200);
+                    reply.end();
                 }
-            });
-
-            reply.writeHead(200);
+            );
         }
-
-        reply.end();
     });
 
     // Change birthday of an existing chicken
     server.patch('/chicken', async(request, reply) => {
         const requestBody = request.body;
+        requestBody.birthday = (new Date(requestBody.birthday))
 
-        farmyard = farmyard.map(chickenElement => {
-            if (chickenElement.name === requestBody.name)
-            {
-                chickenElement.birthday = (new Date(requestBody.birthday)).toLocaleDateString();
-                return chickenElement;
+        database.query('UPDATE chicken ' +
+               'SET ' +
+                   'birthday = ' + database.escape(requestBody.birthday) +
+                'WHERE name = ' + database.escape(requestBody.name) + ';',
+            function(error) {
+                if (error) {
+                    throw error;
+                }
+
+                reply.writeHead(200);
+                reply.end();
             }
-        });
-
-        reply.writeHead(200);
-        reply.end();
+        );
     });
 
     // Delete an existing chicken
@@ -80,37 +128,37 @@ export function chickenRunServer(port, host) {
         const requestBody = request.body;
 
         // Delete right named chickens
-        farmyard = farmyard.filter(chickenElement => chickenElement.name !== requestBody.name)
+        database.query('DELETE FROM chicken ' +
+                'WHERE name = ' + database.escape(requestBody.name) + ';',
+            function(error) {
+                if (error) {
+                    throw error;
+                }
 
-        reply.writeHead(200);
-        reply.end();
+                reply.writeHead(200);
+                reply.end();
+            }
+        );
     });
 
     // Increments steps, and update isRunning to true
     server.post('/chicken/run', async(request, reply) => {
         const requestBody = request.body
 
-        // Update everyone in case of no given name
-        if (!requestBody.name) {
-            for (let chicken of farmyard) {
-                chicken.steps++;
-                chicken.isRunning = true;
+        database.query('UPDATE chicken ' +
+                'SET ' +
+                   'steps = steps + 1,' +
+                   'isRunning = true ' +
+                'WHERE name = ' + database.escape(requestBody.name) + ';',
+            function(error) {
+                if (error) {
+                    throw error;
+                }
+
+                reply.writeHead(200);
+                reply.end();
             }
-        }
-
-        // Get chicken by name
-        const chicken = farmyard.find(chickenElement => chickenElement.name === requestBody.name);
-
-        // Update right chicken
-        if (chicken){
-            chicken.steps++;
-            chicken.isRunning = true;
-            reply.writeHead(200);
-        } else {
-            reply.writeHead(422);
-        }
-
-        reply.end();
+        );
     });
 
     server.listen(port, host);
@@ -128,7 +176,7 @@ function parseRequest(bodyObject) {
 
     return {
         name: bodyObject.name, //Required
-        birthday: (new Date).toLocaleDateString(), // Current time
+        birthday: new Date, // Current time
         weight: bodyObject.weight, //Required
         steps: 0, //Default
         isRunning: false, //Default
