@@ -38,7 +38,7 @@ Replace an existing chicken in the farmyard
 * `curl -X PUT -H 'Content-type: application/json' -d '{"name: "firstChicken", "weigth": 4}' localhost:5050/chicken`
 #### PATCH
 Change the birthday of an existing chicken in the farmyard
-*`curl -X PATCH -H 'Content-type: application/json' -d '{"birthday": "01/21/2022"}' localhost:5050/chicken`
+* `curl -X PATCH -H 'Content-type: application/json' -d '{"birthday": "01/21/2022"}' localhost:5050/chicken`
 #### DELETE
 Delete an existing chicken in the farmyard
 * `curl -X DELETE -H 'Content-type: application/json' -d '{"name": "firstChicken"}' localhost:5050/chicken`
