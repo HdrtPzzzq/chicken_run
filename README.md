@@ -12,7 +12,7 @@ Create MySQL server and connect a client
 * `mysql -uroot -h127.0.0.1 -ppassword123 -P3306`
 
 Once connected to the client, create a Database
-* `CREATE DATABASE chicken_run`
+* `CREATE DATABASE chicken_run;`
 
 Start the back-end server on `localhost:5050` by default
 * `npm run start`
@@ -28,24 +28,23 @@ For both of these routes JSON data must be sent
 ### Chicken's endpoints
 
 #### GET  
-Send a reply with all the chicken in the farmyard 
+Send a reply with all the chicken
 * `curl localhost:5050/`
 #### POST
-Create a new chicken in the farmyard
-* `curl -X POST -H 'Content-type: application/json' -d '{"name: "firstChicken", "weigth": 3.5}' localhost:5050/chicken`
+Create a new chicken
+* `curl -X POST -H 'Content-type: application/json' -d '{"name": "firstChicken", "weight": 3.5}' localhost:5050/chicken`
 #### PUT
-Replace an existing chicken in the farmyard
-* `curl -X PUT -H 'Content-type: application/json' -d '{"name: "firstChicken", "weigth": 4}' localhost:5050/chicken`
+Replace an existing chicken
+* `curl -X PUT -H 'Content-type: application/json' -d '{"name": "firstChicken", "weight": 4}' localhost:5050/chicken`
 #### PATCH
-Change the birthday of an existing chicken in the farmyard
-* `curl -X PATCH -H 'Content-type: application/json' -d '{"birthday": "01/21/2022"}' localhost:5050/chicken`
+Change the isRunning state of an existing chicken
+* `curl -X PATCH -H 'Content-type: application/json' -d '{"isRunning": true}' localhost:5050/chicken`
 #### DELETE
-Delete an existing chicken in the farmyard
+Delete an existing chicken
 * `curl -X DELETE -H 'Content-type: application/json' -d '{"name": "firstChicken"}' localhost:5050/chicken`
 
 ### Chicken run's endpoints
 
 #### POST
 If a json with a name field is sent, increments all chicken's steps named that way.
-This endpoint set isRunning value to true aswell.
 * `curl -X POST -H 'Content-type: application/json' -d '{"name": "firstChicken"}' localhost:5050/chicken/run`

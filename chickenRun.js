@@ -17,12 +17,9 @@ export function chickenRunServer(port, host) {
 
     database.connect();
 
-    // Drop potential table
-    database.query('DROP TABLE chicken;');
-
     // Create table in DB
     database.query(
-        `CREATE TABLE chicken
+        `CREATE TABLE IF NOT EXISTS chicken
                 (name varchar(255) NOT NULL,
                  birthday TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                  weight real NOT NULL,
@@ -52,10 +49,9 @@ export function chickenRunServer(port, host) {
     // Add a chicken to the farmyard
     server.post('/chicken', async(request, reply) => {
         const requestBody = parseRequest(request.body);
-        let queryResult;
 
         // Mandatory fields not correct
-        if (typeof requestBody === "string") {
+        if (requestBody === undefined) {
             reply.writeHead(422, {'Content-type': 'text/plain'});
             reply.end();
         } else {
@@ -66,7 +62,7 @@ export function chickenRunServer(port, host) {
                     if (error) {
                         throw error;
                     }
-                    queryResult = results;
+
                     reply.writeHead(200, {'Content-type': 'application/json'});
                     reply.end();
                 }
@@ -86,8 +82,17 @@ export function chickenRunServer(port, host) {
             reply.writeHead(422);
             reply.end();
         } else {
+            if (typeof requestBody.birthday !== "string") {
+                requestBody.birthday = undefined;
+            }
+            if (typeof requestBody.steps !== "number") {
+                requestBody.steps = undefined;
+            }
+            if (typeof requestBody.isRunning !== "boolean") {
+                requestBody.isRunning = undefined;
+            }
             database.query('UPDATE chicken ' +
-               'SET birthday = ' + database.escape(requestBody.birthday) + ',' +
+               'SET birthday = ' + database.escape(requestBody.birthday) + ', ' +
                    'weight = ' + database.escape(requestBody.weight) + ', '+
                    'steps = ' + database.escape(requestBody.steps) + ', ' +
                    'isRunning = ' + database.escape(requestBody.isRunning) + ' '+
@@ -103,15 +108,18 @@ export function chickenRunServer(port, host) {
         }
     });
 
-    // Change birthday of an existing chicken
+    // Change isRunning state of an existing chicken
     server.patch('/chicken', async(request, reply) => {
         const requestBody = request.body;
-        requestBody.birthday = (new Date(requestBody.birthday))
+
+        if (typeof requestBody.isRunning !== "boolean") {
+            requestBody.isRunning = undefined;
+        }
 
         database.query('UPDATE chicken ' +
                'SET ' +
-                   'birthday = ' + database.escape(requestBody.birthday) +
-                'WHERE name = ' + database.escape(requestBody.name) + ';',
+                   'isRunning = ' + database.escape(requestBody.isRunning) +
+                ' WHERE name = ' + database.escape(requestBody.name) + ';',
             function(error) {
                 if (error) {
                     throw error;
@@ -147,9 +155,8 @@ export function chickenRunServer(port, host) {
 
         database.query('UPDATE chicken ' +
                 'SET ' +
-                   'steps = steps + 1,' +
-                   'isRunning = true ' +
-                'WHERE name = ' + database.escape(requestBody.name) + ';',
+                   'steps = steps + 1' +
+                ' WHERE name = ' + database.escape(requestBody.name) + ';',
             function(error) {
                 if (error) {
                     throw error;
@@ -169,9 +176,9 @@ export function chickenRunServer(port, host) {
 function parseRequest(bodyObject) {
     // Mandatory fields not correct
     if (typeof bodyObject.name !== "string") {
-        return 'Field name requires a string';
+        return undefined;
     } else if (typeof bodyObject.weight !== "number") {
-        return 'Field weight requires a number';
+        return undefined;
     }
 
     return {
