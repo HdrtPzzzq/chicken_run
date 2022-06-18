@@ -149,7 +149,7 @@ export function chickenRunServer(port, host) {
         );
     });
 
-    // Increments steps, and update isRunning to true
+    // Increments steps
     server.post('/chicken/run', async(request, reply) => {
         const requestBody = request.body
 
