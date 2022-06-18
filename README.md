@@ -29,7 +29,7 @@ For both of these routes JSON data must be sent
 
 #### GET  
 Send a reply with all the chicken
-* `curl localhost:5050/`
+* `curl localhost:5050/chicken`
 #### POST
 Create a new chicken
 * `curl -X POST -H 'Content-type: application/json' -d '{"name": "firstChicken", "weight": 3.5}' localhost:5050/chicken`
@@ -38,7 +38,7 @@ Replace an existing chicken
 * `curl -X PUT -H 'Content-type: application/json' -d '{"name": "firstChicken", "weight": 4}' localhost:5050/chicken`
 #### PATCH
 Change the isRunning state of an existing chicken
-* `curl -X PATCH -H 'Content-type: application/json' -d '{"isRunning": true}' localhost:5050/chicken`
+* `curl -X PATCH -H 'Content-type: application/json' -d '{"name": "firstChicken", "isRunning": true}' localhost:5050/chicken`
 #### DELETE
 Delete an existing chicken
 * `curl -X DELETE -H 'Content-type: application/json' -d '{"name": "firstChicken"}' localhost:5050/chicken`
